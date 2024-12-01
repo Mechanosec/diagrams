@@ -1,0 +1,110 @@
+datasource db {
+  provider = "postgresql"
+  url      = ""
+}
+
+enum OutfitItemStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Shop {
+  id               String           @id @default(uuid())
+  name             String
+  status           OutfitItemStatus
+  logoPublicId     String
+  logoLink         String
+  multiBrand       Boolean
+  diactivateReason String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?
+  deletedAt        DateTime?
+
+  shopAttribute   ShopAttribute[]
+  deliveryCountry DeliveryCountry[]
+  returnCountry   ReturnCountry[]
+}
+
+model ShopAttribute {
+  id     String @id @default(uuid())
+  shopId String @db.Uuid
+  type   String
+  key    String
+  value  String
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model DeliveryCountry {
+  id               String  @id @default(uuid())
+  shopId           String  @db.Uuid
+  code             String
+  name             String
+  externalShopLink String?
+
+  shop           Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  outfitItemInfo OutfitItemInfo[]
+}
+
+model ReturnCountry {
+  id     String @id @default(uuid())
+  shopId String @db.Uuid
+  code   String
+  name   String
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model OutfitItem {
+  id        String           @id @default(uuid())
+  lookId    String
+  shopId    String           @db.Uuid
+  status    OutfitItemStatus
+  creatorId String           @db.Uuid
+  createdAt DateTime         @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
+
+  outfitItemInfo  OutfitItemInfo[]
+  outfitItemImage OutfitItemImage[]
+}
+
+model OutfitItemInfo {
+  id                    String  @id @default(uuid())
+  outfitItemId          String  @db.Uuid
+  shopDeliveryCountryId String  @db.Uuid
+  externalItemLink      String
+  isHide                Boolean @default(false)
+  name                  String
+  price                 String
+  currency              String
+  code                  String
+
+  shopDeliveryCountry     DeliveryCountry           @relation(fields: [shopDeliveryCountryId], references: [id], onDelete: Cascade)
+  outfitItem              OutfitItem                @relation(fields: [outfitItemId], references: [id], onDelete: Cascade)
+  OutfitItemInfoAttribute OutfitItemInfoAttribute[]
+}
+
+model OutfitItemInfoAttribute {
+  id               String  @id @default(uuid())
+  outfitItemInfoId String  @db.Uuid
+  isShopAttribute  Boolean @default(false)
+  type             String
+  key              String
+  value            String
+
+  outfitItemInfo OutfitItemInfo @relation(fields: [outfitItemInfoId], references: [id], onDelete: Cascade)
+}
+
+model OutfitItemImage {
+  id                    String @id @default(uuid())
+  outfitItemId          String @db.Uuid
+  imageOriginalPublicId String
+  imageOriginalLink     String
+  imageEditedPublicId   String
+  imageEditedLink       String
+  indexPosition         Int    @default(0)
+  order                 Int    @default(0)
+
+  outfitItem OutfitItem @relation(fields: [outfitItemId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,121 @@
+datasource db {
+  provider = "postgresql"
+  url      = ""
+}
+
+model User {
+  id                     String                   @id @default(uuid())
+  email                  String
+  initialEmail           String
+  appType                String
+  password               String
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime?
+  deletedAt              DateTime?
+  UserUtilityInfo        UserUtilityInfo[]
+  UserInfo               UserInfo[]
+  UserState              UserState[]
+  UserNote               UserNote[]
+  UserGuide              UserGuide[]
+  UserContentInteraction UserContentInteraction[]
+  UserAttachment         UserAttachment[]
+}
+
+enum EUserAttachmentType {
+  OUTFIT
+  PDF
+}
+
+model UserAttachment {
+  id           String              @id @default(uuid())
+  userId       String              @db.Uuid
+  attachmentId String
+  type         EUserAttachmentType
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserGuide {
+  id      String @id @default(uuid())
+  userId  String @db.Uuid
+  guideId String
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserUtilityInfo {
+  id                   String  @id @default(uuid())
+  userId               String  @db.Uuid
+  fcmToken             String
+  zendeskJwtToken      String
+  zendeskJwtTokenTitle String?
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserInfo {
+  id            String  @id @default(uuid())
+  userId        String  @db.Uuid
+  domain        String
+  profileName   String
+  questionnaire Json    @default("{}") @db.Json
+  phone         String?
+
+  firstName String
+  lastName  String
+  userName  String
+
+  country    String
+  deviceType String
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserState {
+  id         String  @id @default(uuid())
+  userId     String  @db.Uuid
+  loginInApp Boolean @default(false)
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserNote {
+  id        String   @id @default(uuid())
+  userId    String   @db.Uuid
+  title     String
+  text      String
+  timestamp DateTime
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum EUserContentInteractionType {
+  LIKE
+  DISLIKE
+}
+
+enum EUserContentInteractionContentType {
+  ARTICLE
+  COLLECTION
+}
+
+enum EUserContentInteractionRelatedTo {
+  STYLE_BOOK
+  INSIGHT
+  HIGHTLIGHT
+}
+
+model UserContentInteraction {
+  id              String                             @id @default(uuid()) @db.Uuid
+  userId          String                             @db.Uuid
+  interactionType EUserContentInteractionType
+  contentId       String
+  contentType     EUserContentInteractionContentType
+  relatedTo       EUserContentInteractionRelatedTo
+  createdAt       DateTime                           @default(now())
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], type: BTree)
+  @@index([contentId], type: BTree)
+}

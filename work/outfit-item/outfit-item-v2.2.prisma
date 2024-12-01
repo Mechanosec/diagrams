@@ -1,0 +1,172 @@
+datasource db {
+  provider = "postgresql"
+  url      = ""
+}
+
+// mock
+model User {
+  id             String           @id @default(uuid()) @db.Uuid
+  email          String           @unique @db.VarChar(255)
+  UserOutfitItem UserOutfitItem[]
+  OutfitItem     OutfitItem[]
+}
+
+//mock
+model UserOutfitItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  outfitItemId String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outfitItem OutfitItem @relation(fields: [outfitItemId], references: [id], onDelete: Cascade)
+}
+
+//mock
+model OutfitLook {
+  id   String  @id @default(uuid()) @db.Uuid
+  name String? @db.VarChar(255)
+
+  OutfitItem OutfitItem[]
+}
+
+enum EShopStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Shop {
+  id               String      @id @default(uuid()) @db.Uuid
+  name             String?     @db.VarChar(255)
+  status           EShopStatus @default(INACTIVE)
+  logoPublicId     String?     @db.VarChar(255)
+  logoLink         String?     @db.VarChar(255)
+  multiBrand       Boolean     @default(false)
+  deactivateReason String?     @db.VarChar(255)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now()) @updatedAt
+  deletedAt        DateTime?
+
+  shopAttributes    ShopAttribute[]
+  deliveryCountries DeliveryCountry[]
+  returnCountries   ReturnCountry[]
+  outfitItems       OutfitItem[]
+}
+
+model ShopAttribute {
+  id     String @id @default(uuid()) @db.Uuid
+  shopId String @db.Uuid
+  type   String @db.VarChar(255)
+  key    String @db.VarChar(255)
+  value  String @db.VarChar(255)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model DeliveryCountry {
+  id               String  @id @default(uuid()) @db.Uuid
+  code             String  @db.VarChar(255)
+  name             String  @db.VarChar(255)
+  externalShopLink String? @db.VarChar(255)
+  shopId           String  @db.Uuid
+
+  shop                      Shop                        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  outfitItemDeliveryCountry OutfitItemDeliveryCountry[]
+}
+
+model ReturnCountry {
+  id     String @id @default(uuid()) @db.Uuid
+  code   String @db.VarChar(255)
+  name   String @db.VarChar(255)
+  shopId String @db.Uuid
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+enum EOutfitItemType {
+  TOP
+  BOTTOM
+  SHOES
+  ACCESSORIES
+}
+
+enum EOutfitItemStatus {
+  DRAFT
+  PENDING_REVIEW
+  REVIEW_FEEDBACK
+  READY_FOR_ACTIVATION
+  ACTIVE
+  ARCHIVED
+}
+
+model OutfitItem {
+  id      String @id @default(uuid()) @db.Uuid
+  version String @default("1.0")
+
+  // old fields
+  shop          Json?   @default("{\"title\": \"\", \"value\": \"\"}")
+  link          String? @db.VarChar(255)
+  imagePublicId String? @db.VarChar(255)
+  imageLink     String? @db.VarChar(255)
+  position      String? @db.VarChar(255)
+  sizes         Json?   @default("{\"measureSystem\":\"\", \"values\": []}") @db.Json
+
+  //actual old fields
+  itemType        String?          @db.VarChar(255)
+  code            String?          @db.VarChar(255)
+  name            String?          @db.VarChar(255)
+  price           String?          @db.VarChar(255)
+  currency        String?          @db.VarChar(255)
+  lookId          String?          @db.Uuid
+  look            OutfitLook?      @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  shopId          String?          @db.Uuid
+  shopModel       Shop?            @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now()) @updatedAt
+  deletedAt       DateTime?
+  userOutfitItems UserOutfitItem[]
+
+  // actual new fields
+  outfitItemGeneralId         String?                    @db.Uuid
+  status                      EOutfitItemStatus          @default(DRAFT)
+  creatorId                   String?                    @db.Uuid
+  creator                     User?                      @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  outfitItemAttributes        OutfitItemAttribute[]
+  outfitItemDeliveryCountryId String?                    @unique @db.Uuid
+  outfitItemDeliveryCountry   OutfitItemDeliveryCountry? @relation(fields: [outfitItemDeliveryCountryId], references: [id], onDelete: SetNull)
+  OutfitItemImage             OutfitItemImage[]
+}
+
+model OutfitItemDeliveryCountry {
+  id                    String  @id @default(uuid()) @db.Uuid
+  shopDeliveryCountryId String  @db.Uuid
+  externalItemLink      String? @db.VarChar(255)
+  isHide                Boolean @default(false)
+
+  shopDeliveryCountry DeliveryCountry @relation(fields: [shopDeliveryCountryId], references: [id], onDelete: Cascade)
+  OutfitItem          OutfitItem?     @relation()
+}
+
+model OutfitItemImage {
+  id                    String @id @default(uuid()) @db.Uuid
+  outfitItemGeneralId   String @db.Uuid
+  imageOriginalPublicId String @db.VarChar(255)
+  imageOriginalLink     String @db.VarChar(255)
+  imageEditedPublicId   String @db.VarChar(255)
+  imageEditedLink       String @db.VarChar(255)
+  indexPosition         Int    @default(0)
+  order                 Int    @default(0)
+
+  outfitItem OutfitItem @relation(fields: [outfitItemGeneralId], references: [id])
+}
+
+model OutfitItemAttribute {
+  id              String  @id @default(uuid()) @db.Uuid
+  outfitItemId    String  @db.Uuid
+  isShopAttribute Boolean @default(false)
+  type            String  @db.VarChar(255)
+  key             String  @db.VarChar(255)
+  value           String  @db.VarChar(255)
+
+  outfitItem OutfitItem @relation(fields: [outfitItemId], references: [id])
+}
