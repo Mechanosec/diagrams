@@ -1,0 +1,58 @@
+datasource db {
+  provider = "postgresql"
+  url      = ""
+}
+
+model OutfitCategoryViewType {
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String           @db.VarChar(255)
+  outfitCategory OutfitCategory[]
+}
+
+model OutfitCategory {
+  id                       String  @id @default(uuid()) @db.Uuid
+  name                     String  @db.VarChar(255)
+  title                    String  @db.VarChar(255)
+  subTitle                 String  @db.VarChar(255)
+  outfitCategoryViewTypeId String  @db.Uuid
+  isActive                 Boolean @default(true)
+  order                    Int     @default(0)
+
+  outfitCategoryViewType OutfitCategoryViewType @relation(fields: [outfitCategoryViewTypeId], references: [id])
+  outfitSubCategory      OutfitSubCategory[]    @relation("OutfitSubCategoryOutfitCategory")
+}
+
+model OutfitSubCategoryViewType {
+  id                String              @id @default(uuid()) @db.Uuid
+  name              String              @db.VarChar(255)
+  OutfitSubCategory OutfitSubCategory[]
+}
+
+model OutfitSubCategory {
+  id                          String  @id @default(uuid()) @db.Uuid
+  name                        String  @db.VarChar(255)
+  title                       String  @db.VarChar(255)
+  subTitle                    String  @db.VarChar(255)
+  text                        String
+  ctaButtonText               String  @db.VarChar(255)
+  image                       String  @db.VarChar(255)
+  outfitSubCategoryViewTypeId String  @db.Uuid
+  isActive                    Boolean @default(true)
+
+  outfitSubCategoryViewType OutfitSubCategoryViewType @relation(fields: [outfitSubCategoryViewTypeId], references: [id])
+  outfitCategory            OutfitCategory[]          @relation("OutfitSubCategoryOutfitCategory")
+}
+
+model OutfitFilterType {
+  id           String         @id @default(uuid()) @db.Uuid
+  name         String         @db.VarChar(255)
+  outfitFilter OutfitFilter[]
+}
+
+model OutfitFilter {
+  id                 String @id @default(uuid()) @db.Uuid
+  name               String @db.VarChar(255)
+  outfitFilterTypeId String @db.Uuid
+
+  outfitFilterType OutfitFilterType @relation(fields: [outfitFilterTypeId], references: [id])
+}
